@@ -24,37 +24,62 @@ def get_python_info():
     print("\nInstalled Python Packages:")
     installed_packages = [(d.project_name, d.version) for d in pkg_resources.working_set]
     for project_name, version in sorted(installed_packages):
-        print(f"{project_name}=={version}")
+        print(f'"{project_name}"="{version}"')
 
 def execute_command(command):
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, universal_newlines=True)
-        output = result.stdout
-        if output:
-            print(output)
-        else:
-            print("No information available or access denied.")
+        return result.stdout
     except subprocess.CalledProcessError:
         print("Failed to execute the command.")
+        return ""
+
+def parse_and_print(output, parser):
+    for line in output.strip().split("\n"):
+        name, version = parser(line)
+        if name and version:
+            print(f'"{name}"="{version}"')
+
+def windows_parser(line):
+    try:
+        name, version = line.strip().split(",")[0].split("=", 1)
+        name = name.replace("DisplayName: ", "").strip()
+        version = version.replace("DisplayVersion: ", "").strip()
+        return name, version
+    except ValueError:
+        return None, None
+
+def linux_parser(line):
+    parts = line.strip().split()
+    if len(parts) >= 2:
+        return parts[0], parts[1]
+    else:
+        return parts[0], "Unknown"
 
 def get_system_libraries_info():
     if platform.system() == "Windows":
         print_divider("Windows System Libraries and Applications Information")
-        # Example command to list installed programs on Windows
         command = 'powershell "Get-ItemProperty HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayVersion | Format-List"'
-        execute_command(command)
+        output = execute_command(command)
+        parse_and_print(output, windows_parser)
 
     elif platform.system() == "Linux":
         print_divider("Linux System Libraries and Applications Information")
-        # Example command to list installed packages on Debian/Ubuntu
-        command = 'dpkg --get-selections | grep -v deinstall'
-        execute_command(command)
+        if os.path.isfile("/usr/bin/dpkg"):
+            command = 'dpkg -l | awk \'{print $2 " " $3}\''
+        elif os.path.isfile("/usr/bin/rpm"):
+            command = 'rpm -qa --queryformat "%{NAME} %{VERSION}-%{RELEASE}\n"'
+        else:
+            print("Unsupported Linux distribution or package manager not found.")
+            return
+        output = execute_command(command)
+        parse_and_print(output, linux_parser)
 
     elif platform.system() == "Darwin":
         print_divider("Mac System Libraries and Applications Information")
-        # Example command to list installed applications on Mac
-        command = 'system_profiler SPApplicationsDataType'
-        execute_command(command)
+        command = 'system_profiler SPApplicationsDataType | awk -F": " \'/^[ ]+[^:]+: [^ ]/ {app=$1; getline; ver=$2; print app " " ver}\''
+        output = execute_command(command)
+        parse_and_print(output, linux_parser)
 
 def main():
     get_os_info()
