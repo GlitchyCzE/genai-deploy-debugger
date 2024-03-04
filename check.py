@@ -37,7 +37,8 @@ def execute_command(command):
 def parse_and_print(output, parser):
     apps = parser(output)
     for name, version in apps:
-        print(f'"{name}"="{version}"')
+        if name and version:  # Check to avoid printing empty entries
+            print(f'"{name}"="{version}"')
 
 def windows_parser(output):
     apps = []
@@ -56,9 +57,9 @@ def linux_parser(output):
     apps = []
     for line in output.strip().split("\n"):
         parts = line.strip().split()
-        if len(parts) >= 2:
+        if len(parts) >= 2 and parts[0] and parts[1]:  # Ensure both name and version are present
             apps.append((parts[0], parts[1]))
-        else:
+        elif parts and parts[0]:  # Only add if the name is present
             apps.append((parts[0], "Unknown"))
     return apps
 
