@@ -108,7 +108,7 @@ def perform_diagnosis_checks(ports):
         if result:
             print(f"[-] Port {port} is NOT bindable: could be already in use or restricted.")
         else:
-            print(f"[+] Port {port} is bindable.")
+            print(f"[+] Port {port} is bindable and ready for use.")
 
     # requirements.txt presence and dependencies check
     if os.path.isfile("requirements.txt"):
@@ -125,28 +125,29 @@ def perform_diagnosis_checks(ports):
         print("[-] requirements.txt is NOT present.")
 
     # Disk space check
-    _, _, free = shutil.disk_usage(".")
+    total, used, free = shutil.disk_usage(".")
     if free > 1e+9:  # Assuming 1GB is sufficient
-        print("[+] Sufficient disk space available.")
+        print(f"[+] Sufficient disk space available. Total: {total // (2**30)} GiB, Used: {used // (2**30)} GiB, Free: {free // (2**30)} GiB")
     else:
-        print("[-] Insufficient disk space.")
+        print(f"[-] Insufficient disk space. Total: {total // (2**30)} GiB, Used: {used // (2**30)} GiB, Free: {free // (2**30)} GiB")
 
     # Write permission check
     if os.access(".", os.W_OK):
-        print("[+] Write permission in the current directory.")
+        print("[+] Write permission in the current directory is available.")
     else:
         print("[-] No write permission in the current directory.")
 
     # Network connectivity check
     try:
         urllib.request.urlopen("http://www.google.com", timeout=10)
-        print("[+] Network connectivity is available.")
-    except urllib.error.URLError:
-        print("[-] Network connectivity is NOT available.")
+        print("[+] Network connectivity to google.com is available.")
+    except urllib.error.URLError as e:
+        print(f"[-] Network connectivity to google.com is NOT available. Error: {e.reason}")
 
     # Virtual environment check
-    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
-        print("[+] A virtual environment is currently activated.")
+    virtual_env = sys.prefix != sys.base_prefix
+    if virtual_env:
+        print(f"[+] A virtual environment is currently activated at {sys.prefix}.")
     else:
         print("[-] No virtual environment is activated.")
 
