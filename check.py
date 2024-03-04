@@ -131,11 +131,12 @@ def perform_diagnosis_checks(ports):
     else:
         print(f"[-] Insufficient disk space. Total: {total // (2**30)} GiB, Used: {used // (2**30)} GiB, Free: {free // (2**30)} GiB")
 
-    # Write permission check
-    if os.access(".", os.W_OK):
-        print("[+] Write permission in the current directory is available.")
+    # Write permission check in the current directory
+    current_directory = os.getcwd()
+    if os.access(current_directory, os.W_OK):
+        print(f"[+] Write permission in the current directory ({current_directory}) is available.")
     else:
-        print("[-] No write permission in the current directory.")
+        print(f"[-] No write permission in the current directory ({current_directory}).")
 
     # Network connectivity check
     try:
