@@ -93,45 +93,62 @@ def get_system_libraries_info():
 
 def perform_diagnosis_checks(ports):
     print_divider("Diagnosis Checks")
+
     # Python PATH check
     python_path = shutil.which("python") or shutil.which("python3")
-    print(f"[{'+' if python_path else '-'}] Python in PATH")
+    if python_path:
+        print(f"[+] Python in PATH: {python_path}")
+    else:
+        print("[-] Python is NOT in PATH.")
 
     # Port bindability check
     for port in ports:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             result = s.connect_ex(("localhost", port)) == 0
-        print(f"[{'-' if result else '+'}] Port {port} bindable")
+        if result:
+            print(f"[-] Port {port} is NOT bindable: could be already in use or restricted.")
+        else:
+            print(f"[+] Port {port} is bindable.")
 
     # requirements.txt presence and dependencies check
-    requirements_present = os.path.isfile("requirements.txt")
-    print(f"[{'+' if requirements_present else '-'}] requirements.txt present")
-    if requirements_present:
+    if os.path.isfile("requirements.txt"):
+        print("[+] requirements.txt is present.")
         with open("requirements.txt") as f:
             required_packages = f.readlines()
         installed_packages = {d.project_name.lower(): d.version for d in pkg_resources.working_set}
         missing_packages = [pkg.split("==")[0].strip().lower() for pkg in required_packages if pkg.split("==")[0].strip().lower() not in installed_packages]
-        print(f"[{'+' if not missing_packages else '-'}] All dependencies installed")
+        if missing_packages:
+            print(f"[-] Missing packages from requirements.txt: {', '.join(missing_packages)}")
+        else:
+            print("[+] All dependencies in requirements.txt are installed.")
+    else:
+        print("[-] requirements.txt is NOT present.")
 
     # Disk space check
     _, _, free = shutil.disk_usage(".")
-    print(f"[{'+' if free > 1e+9 else '-'}] Sufficient disk space")  # Assuming 1GB is sufficient
+    if free > 1e+9:  # Assuming 1GB is sufficient
+        print("[+] Sufficient disk space available.")
+    else:
+        print("[-] Insufficient disk space.")
 
     # Write permission check
-    write_permission = os.access(".", os.W_OK)
-    print(f"[{'+' if write_permission else '-'}] Write permission in current directory")
+    if os.access(".", os.W_OK):
+        print("[+] Write permission in the current directory.")
+    else:
+        print("[-] No write permission in the current directory.")
 
     # Network connectivity check
     try:
         urllib.request.urlopen("http://www.google.com", timeout=10)
-        network_connectivity = True
+        print("[+] Network connectivity is available.")
     except urllib.error.URLError:
-        network_connectivity = False
-    print(f"[{'+' if network_connectivity else '-'}] Network connectivity")
+        print("[-] Network connectivity is NOT available.")
 
     # Virtual environment check
-    virtual_env = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
-    print(f"[{'+' if virtual_env else '-'}] Virtual environment activated")
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        print("[+] A virtual environment is currently activated.")
+    else:
+        print("[-] No virtual environment is activated.")
 
 def show_help():
     print("Usage: python checker.py [options]")
