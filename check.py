@@ -2,6 +2,7 @@ import os
 import platform
 import subprocess
 import sys
+import pkg_resources  # Added for listing installed packages
 
 def print_divider(title):
     print("\n" + "=" * 50)
@@ -20,14 +21,10 @@ def get_os_info():
 def get_python_info():
     print_divider("Python Environment Information")
     print(f"Python Version: {platform.python_version()}")
-    try:
-        import pip
-        installed_packages = pip.get_installed_distributions()
-        print("\nInstalled Python Packages:")
-        for package in installed_packages:
-            print(f"{package.key}=={package.version}")
-    except ImportError:
-        print("Pip is not available.")
+    print("\nInstalled Python Packages:")
+    installed_packages = [(d.project_name, d.version) for d in pkg_resources.working_set]
+    for project_name, version in sorted(installed_packages):
+        print(f"{project_name}=={version}")
 
 def execute_command(command):
     try:
