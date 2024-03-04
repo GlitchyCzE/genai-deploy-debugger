@@ -3,8 +3,13 @@ import platform
 import subprocess
 import sys
 
+def print_divider(title):
+    print("\n" + "=" * 50)
+    print(f" {title} ")
+    print("=" * 50)
+
 def get_os_info():
-    print("Operating System Information:")
+    print_divider("Operating System Information")
     print(f"System: {platform.system()}")
     print(f"Node Name: {platform.node()}")
     print(f"Release: {platform.release()}")
@@ -13,7 +18,7 @@ def get_os_info():
     print(f"Processor: {platform.processor()}")
 
 def get_python_info():
-    print("\nPython Environment Information:")
+    print_divider("Python Environment Information")
     print(f"Python Version: {platform.python_version()}")
     try:
         import pip
@@ -24,19 +29,35 @@ def get_python_info():
     except ImportError:
         print("Pip is not available.")
 
+def execute_command(command):
+    try:
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, universal_newlines=True)
+        output = result.stdout
+        if output:
+            print(output)
+        else:
+            print("No information available or access denied.")
+    except subprocess.CalledProcessError:
+        print("Failed to execute the command.")
+
 def get_system_libraries_info():
     if platform.system() == "Windows":
-        print("\nWindows System Libraries Information: (Limited)")
-        # Windows specific commands here
-        # For example, using `subprocess` to execute `wmic product get name, version`
+        print_divider("Windows System Libraries and Applications Information")
+        # Example command to list installed programs on Windows
+        command = 'powershell "Get-ItemProperty HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayVersion | Format-List"'
+        execute_command(command)
+
     elif platform.system() == "Linux":
-        print("\nLinux System Libraries Information: (Limited)")
-        # Linux specific commands here
-        # For example, using `subprocess` to execute `dpkg --get-selections`
+        print_divider("Linux System Libraries and Applications Information")
+        # Example command to list installed packages on Debian/Ubuntu
+        command = 'dpkg --get-selections | grep -v deinstall'
+        execute_command(command)
+
     elif platform.system() == "Darwin":
-        print("\nMac System Libraries Information: (Limited)")
-        # Mac specific commands here
-        # For example, using `subprocess` to execute `system_profiler SPApplicationsDataType`
+        print_divider("Mac System Libraries and Applications Information")
+        # Example command to list installed applications on Mac
+        command = 'system_profiler SPApplicationsDataType'
+        execute_command(command)
 
 def main():
     get_os_info()
