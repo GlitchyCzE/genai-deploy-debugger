@@ -35,26 +35,32 @@ def execute_command(command):
         return ""
 
 def parse_and_print(output, parser):
+    apps = parser(output)
+    for name, version in apps:
+        print(f'"{name}"="{version}"')
+
+def windows_parser(output):
+    apps = []
+    current_app = {}
+    for line in output.split('\n'):
+        if "DisplayName" in line:
+            current_app['name'] = line.split(':', 1)[1].strip()
+        elif "DisplayVersion" in line:
+            current_app['version'] = line.split(':', 1)[1].strip()
+            if 'name' in current_app and 'version' in current_app:
+                apps.append((current_app['name'], current_app['version']))
+                current_app = {}
+    return apps
+
+def linux_parser(output):
+    apps = []
     for line in output.strip().split("\n"):
-        name, version = parser(line)
-        if name and version:
-            print(f'"{name}"="{version}"')
-
-def windows_parser(line):
-    try:
-        name, version = line.strip().split(",")[0].split("=", 1)
-        name = name.replace("DisplayName: ", "").strip()
-        version = version.replace("DisplayVersion: ", "").strip()
-        return name, version
-    except ValueError:
-        return None, None
-
-def linux_parser(line):
-    parts = line.strip().split()
-    if len(parts) >= 2:
-        return parts[0], parts[1]
-    else:
-        return parts[0], "Unknown"
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            apps.append((parts[0], parts[1]))
+        else:
+            apps.append((parts[0], "Unknown"))
+    return apps
 
 def get_system_libraries_info():
     if platform.system() == "Windows":
